@@ -1,0 +1,136 @@
+#To Extract all the principal ad group membership and put the output in a text file path
+
+$username = "userid"
+get-adprincipalgroupmembership $username | select SamAccountName | Out-File -Width 5000 "C:\TempLIS\ADGroupUsersByCompany.txt"
+
+
+#Import CSV file to get all Data
+
+$csvfile=import-CSV "C:\TempLIS\Users.csv"
+
+# Prompt for inital user information
+
+$firstName = $csvfile.Fname
+$lastName = $csvfile.Lname
+$description = $csvfile.Desc
+$department = $csvfile.Department
+$serialNumber = $csvfile.Snumber
+$revision = $csvfile.Bcode
+$samAccountName = $csvfile.LoginName
+$managerUsername = $csvfile.ManagerName
+$city = $csvfile.City
+$division = $csvfile.Division
+$mobileg=$csvfile.Mobilegroup
+
+
+#check Manager name
+ 
+$managerDistinguishedName = Get-ADUser -Filter {Name -eq $managerUsername} -Properties DistinguishedName | Select-Object -ExpandProperty DistinguishedName
+	if ($managerDistinguishedName -eq $null) {
+    Write-Output "Manager not found. Please enter a valid manager's username."
+	} else {
+    Write-Output "Manager's Distinguished Name: $managerDistinguishedName"
+}
+ 
+ 
+# Set consistent information
+$company = "My Private Company LTD."
+$jobTitle = $description
+
+
+
+
+#take Model id groups
+$newgroupstoadd=$csvfile.Groups
+
+foreach ($gr in $newgroupstoadd)
+{ 
+   $groupsToAdd=$groupsToAdd+$gr
+}
+
+
+# Resets displayname as needed
+$displayName = "$lastName $FirstName$customText"
+
+# Create a new user in Active Directory with specified attributes
+New-ADUser -SamAccountName $samAccountName `
+-UserPrincipalName "$samAccountName@gmail.com" `
+-Name $displayName `
+-GivenName $firstName `
+-Surname $lastName `
+-Description $description `
+-DisplayName $displayName `
+-Office $office `
+-Title $jobTitle `
+-Department $department `
+-Company $company `
+-Manager $managerDistinguishedName `
+-StreetAddress $streetAddress `
+-State $state `
+-City $city `
+-PostalCode $zipCode `
+-Country $country `
+-HomePhone $telephoneNumberHome `
+-OfficePhone $telephoneNumber `
+-AccountPassword (ConvertTo-SecureString -String "Password23?" -AsPlainText -Force) `
+-Enabled $true `
+-Path $ouPath `
+-OtherAttributes @{serialNumber=$serialNumber} 
+
+# Add the user to the specified AD groups
+foreach ($adGroup in $groupsToAdd) {
+    Add-ADGroupMember -Identity $adGroup -Members $samAccountName
+    Write-Output "User $samAccountName added to $adGroup."
+}
+
+# Script waits 2 seconds before adding the M365 group
+Start-Sleep -Seconds 2
+
+
+# Set the revision attribute for the newly created user
+	Set-ADUser -Identity $samAccountName -Replace @{revision=$revision}
+
+
+
+
+
+#clear all
+$csvfile=""
+$company = ""
+$jobTitle = ""
+$groupsToAdd=""
+$displayName=""
+$customText = ""
+$displayName = ""
+$telephoneNumber = ""
+$office = ""
+$streetAddress = ""
+$state = ""
+$city = ""
+$zipCode = ""
+$country = ""
+$telephoneNumberHome = ""
+$ouPath = ""
+$firstName =""
+$lastName = ""
+$description = ""
+$department = ""
+$serialNumber = ""
+$revision =""
+$samAccountName = ""
+$managerUsername =""
+$city = ""
+$division = ""
+$path=""
+$path1=""
+$folderName=""
+$username=""
+
+
+
+
+
+
+
+
+
