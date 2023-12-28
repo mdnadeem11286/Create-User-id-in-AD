@@ -1,0 +1,45 @@
+#Import CSV file to get all Data
+
+$csvfile=import-CSV "C:\TempLIS\Users.csv"
+
+$path=$csvfile.Folderpath}			 
+							 
+							 
+							 
+New-Item -Path $path -Name $folderName -ItemType Directory 
+$path1=$path+"\"+$folderName
+
+
+$acl = Get-Item $path1 |get-acl
+$acl.SetAccessRuleProtection($true,$true)
+$acl |Set-Acl $path1
+
+
+
+  $authusers = ((New-Object System.Security.Principal.SecurityIdentifier 'S-1-5-11').Translate([System.Security.Principal.NTAccount])).Value
+    $acl = Get-Acl $path1
+    $acl.SetAccessRuleProtection($True, $False)
+    $owner = $acl.owner;
+    For($i=$acl.Access.Count - 1; $i -gt 0; $i--)
+    {
+        $rule = $acl.Access[$i]
+        if ($rule.IdentityReference -ne $owner -or $rule.IdentityReference -eq $authusers) 
+        {
+            $acl.RemoveAccessRule($rule)
+        }
+    }
+    Set-ACL -Path $path1 -AclObject $acl | Out-Null
+
+
+$acl=Get-Acl $path1
+$AccessRule=New-Object System.Security.AccessControl.FileSystemAccessRule($username,"FullControl","Allow")
+$acl.SetAccessRule($AccessRule)
+$acl | Set-Acl
+
+$acl=Get-Acl $path1
+$AccessRule=New-Object System.Security.AccessControl.FileSystemAccessRule("LAS Admin","FullControl","Allow")
+$acl.SetAccessRule($AccessRule)
+$acl | Set-Acl
+
+
+Write-host "Folder Created"
